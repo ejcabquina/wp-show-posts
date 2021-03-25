@@ -13,6 +13,10 @@ if ( ! function_exists( 'wpsp_get_json_option' ) ) {
 			wp_die( 'Permission declined' );
 		}
 
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( 'Permission declined' );
+		}
+
 		$option = ( get_post_meta( intval( $_POST[ 'id' ] ), sanitize_text_field( $_POST[ 'key' ] ) ) ) ? get_post_meta( intval( $_POST[ 'id' ] ), sanitize_text_field( $_POST[ 'key' ] ), true ) : false;
 
 		if ( $option ) {
@@ -34,11 +38,15 @@ if ( ! function_exists( 'wpsp_get_terms' ) ) {
 			wp_die( 'Permission declined' );
 		}
 
+		if ( ! current_user_can( 'edit_posts' ) ) {
+			wp_die( 'Permission declined' );
+		}
+
 		if ( empty( $_POST['taxonomy'] ) ) {
 			die();
 		}
 
-		$terms = get_terms( sanitize_key( $_POST[ 'taxonomy' ] ), 'orderby=count&hide_empty=1' );
+		$terms = get_terms( sanitize_key( $_POST[ 'taxonomy' ] ), 'orderby=count&hide_empty=0' );
 		$count = count( $terms );
 		$types = array();
 		if ( $count > 0 ) {
@@ -61,6 +69,10 @@ if ( ! function_exists( 'wpsp_get_taxonomies' ) ) {
 	 */
 	function wpsp_get_taxonomies() {
 		if ( ! isset( $_POST[ 'wpsp_nonce' ] ) || ! wp_verify_nonce( $_POST[ 'wpsp_nonce' ], 'wpsp_nonce' ) ) {
+			wp_die( 'Permission declined' );
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_die( 'Permission declined' );
 		}
 
@@ -87,6 +99,10 @@ if ( ! function_exists( 'wpsp_get_post_lists' ) ) {
 	 */
 	function wpsp_get_post_lists() {
 		if ( ! isset( $_POST[ 'wpsp_nonce' ] ) || ! wp_verify_nonce( $_POST[ 'wpsp_nonce' ], 'wpsp_nonce' ) ) {
+			wp_die( 'Permission declined' );
+		}
+
+		if ( ! current_user_can( 'edit_posts' ) ) {
 			wp_die( 'Permission declined' );
 		}
 

@@ -15,8 +15,8 @@ if ( ! function_exists( 'wp_show_posts_type' ) ) {
 		$labels = array(
 			'name'                  => _x( 'Post Lists', 'Post Type General Name', 'wp-show-posts' ),
 			'singular_name'         => _x( 'Post List', 'Post Type Singular Name', 'wp-show-posts' ),
-			'menu_name'             => __( 'WP Show Posts', 'wp-show-posts' ),
-			'name_admin_bar'        => __( 'WP Show Posts', 'wp-show-posts' ),
+			'menu_name'             => __( 'Show Posts', 'wp-show-posts' ),
+			'name_admin_bar'        => __( 'Show Posts', 'wp-show-posts' ),
 			'archives'              => __( 'List Archives', 'wp-show-posts' ),
 			'parent_item_colon'     => __( 'Parent List:', 'wp-show-posts' ),
 			'all_items'             => __( 'All Lists', 'wp-show-posts' ),
@@ -58,5 +58,34 @@ if ( ! function_exists( 'wp_show_posts_type' ) ) {
 		);
 		register_post_type( 'wp_show_posts', $args );
 
+	}
+}
+
+add_filter( 'manage_wp_show_posts_posts_columns', 'wpsp_set_post_type_columns' );
+/**
+ * Set our custom columns in our post type.
+ *
+ * @since 1.2
+ */
+function wpsp_set_post_type_columns( $columns ) {
+    $columns['shortcode'] = __( 'Shortcode', 'wp-show-posts' );
+
+    return $columns;
+}
+
+add_action( 'manage_wp_show_posts_posts_custom_column', 'wpsp_post_type_shortcode_column', 10, 2 );
+/**
+ * Add our shortcode next to each list item.
+ *
+ * @since 1.2
+ */
+function wpsp_post_type_shortcode_column( $column, $post_id ) {
+	switch ( $column ) {
+		case 'shortcode' :
+			printf(
+				'<input type="text" readonly value=\'[wp_show_posts id="%s"]\' style="width: 200px" />',
+				$post_id
+			);
+		break;
 	}
 }

@@ -11,20 +11,25 @@ if ( ! function_exists( 'wpsp_admin_scripts' ) ) {
 	 */
 	function wpsp_admin_scripts() {
 		global $post_type, $post;
-	    if ( 'wp_show_posts' == $post_type ) {
-			wp_enqueue_script( 'wpsp-admin-scripts', plugin_dir_url( __FILE__ ) . "js/admin-scripts.js", array( 'jquery' ), WPSP_VERSION, true );
-			wp_localize_script( 'wpsp-admin-scripts', 'wpsp_object', array (
-				'post_id' => ( isset( $post ) ) ? $post->ID : false,
-				'nonce' => wp_create_nonce( 'wpsp_nonce' )
-			));
+
+		if ( 'wp_show_posts' == $post_type ) {
+			wp_enqueue_script( 'wpsp-admin-scripts', plugin_dir_url( __FILE__ ) . 'js/admin-scripts.js', array( 'jquery' ), WPSP_VERSION, true );
+
+			wp_localize_script(
+				'wpsp-admin-scripts', 'wpsp_object',
+				array (
+					'post_id' => ( isset( $post ) ) ? $post->ID : false,
+					'nonce' => wp_create_nonce( 'wpsp_nonce' ),
+				)
+			);
 		}
 
-		wp_enqueue_style( 'wpsp-admin', plugin_dir_url( __FILE__ ) . "css/admin.css", array(), WPSP_VERSION );
+		wp_enqueue_style( 'wpsp-admin', plugin_dir_url( __FILE__ ) . 'css/admin.css', array(), WPSP_VERSION );
 	}
 }
 
 if ( ! function_exists( 'wpsp_translatable_strings' ) ) {
-	add_action( 'admin_head','wpsp_translatable_strings', 0 );
+	add_action( 'admin_head', 'wpsp_translatable_strings', 0 );
 	/**
 	 * Add some javascript variables to the admin head
 	 * @since 0.1
@@ -41,7 +46,7 @@ if ( ! function_exists( 'wpsp_translatable_strings' ) ) {
 
 if ( ! function_exists( 'wpsp_add_shortcode_button' ) ) {
 	add_action( 'admin_init', 'wpsp_add_shortcode_button' );
-	/*
+	/**
 	 * Set it up so we can register our TinyMCE button
 	 * @since 0.1
 	 */
@@ -60,7 +65,7 @@ if ( ! function_exists( 'wpsp_add_shortcode_button' ) ) {
 }
 
 if ( ! function_exists( 'wpsp_shortcodes_add_tinymce_plugin' ) ) {
-	/*
+	/**
 	 * Register our tinyMCE button javascript
 	 * @since 0.1
 	 */
@@ -71,7 +76,7 @@ if ( ! function_exists( 'wpsp_shortcodes_add_tinymce_plugin' ) ) {
 }
 
 if ( ! function_exists( 'wpsp_shortcodes_register_button' ) ) {
-	/*
+	/**
 	 * Register our TinyMCE button
 	 * @since 0.1
 	 */
@@ -79,4 +84,26 @@ if ( ! function_exists( 'wpsp_shortcodes_register_button' ) ) {
 		array_push( $buttons, 'wpsp_shortcode_button' );
 		return $buttons;
 	}
+}
+
+add_filter( 'admin_body_class', 'wpsp_set_admin_body_classes' );
+/**
+ * Add body classes to the admin.
+ *
+ * @since 1.2.0
+ * @param string $classes The existing classes.
+ */
+function wpsp_set_admin_body_classes( $classes ) {
+	global $post_type;
+
+	if ( isset( $post_type ) && 'wp_show_posts' === $post_type ) {
+		$image_width = get_post_meta( get_the_ID(), 'wpsp_image_width', true );
+		$image_height = get_post_meta( get_the_ID(), 'wpsp_image_height', true );
+
+		if ( $image_width || $image_height ) {
+			$classes .= ' wpsp-has-legacy-image-values';
+		}
+	}
+
+	return $classes;
 }

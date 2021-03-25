@@ -56,71 +56,117 @@ if ( ! function_exists( 'wpsp_meta' ) ) {
 			echo '<div class="wp-show-posts-entry-meta wp-show-posts-entry-meta-' . $location . ' post-meta-' . $post_meta_style . '">';
 		}
 
-		// If our author is enabled, show it
-		if ( $settings[ 'include_author' ] && $location == $settings[ 'author_location' ] ) {
-			$output[] = apply_filters( 'wpsp_author_output', sprintf(
-				'<span class="wp-show-posts-byline wp-show-posts-meta">
-					<span class="wp-show-posts-author vcard" itemtype="http://schema.org/Person" itemscope="itemscope" itemprop="author">
-						<a class="url fn n" href="%1$s" title="%2$s" rel="author" itemprop="url">
-							<span class="author-name" itemprop="name">%3$s</span>
-						</a>
-					</span>
-				</span>',
-				esc_url( get_author_posts_url( get_the_author_meta( 'ID' ) ) ),
-				esc_attr( sprintf( __( 'View all posts by %s', 'wp-show-posts' ), get_the_author() ) ),
-				esc_html( get_the_author() )
-			) );
+		// If our author is enabled, show it.
+		if ( $settings['include_author'] && $location === $settings['author_location'] ) {
+			$author_microdata = ' itemtype="http://schema.org/Person" itemscope="itemscope" itemprop="author"';
+			$itemprop_url = ' itemprop="url"';
+			$itemprop_name = ' itemprop="name"';
+
+			if ( ! $settings['microdata'] ) {
+				$author_microdata = '';
+				$itemprop_url = '';
+				$itemprop_name = '';
+			}
+
+			$output[] = apply_filters(
+				'wpsp_author_output',
+				sprintf(
+					'<span class="wp-show-posts-byline wp-show-posts-meta">
+						<span class="wp-show-posts-author vcard"%4$s>
+							<a class="url fn n" href="%1$s" title="%2$s" rel="author"%5$s>
+								<span class="author-name"%6$s>%3$s</span>
+							</a>
+						</span>
+					</span>',
+					esc_url( get_author_posts_url( get_the_author_meta( 'ID' ) ) ),
+					esc_attr( sprintf( __( 'View all posts by %s', 'wp-show-posts' ), get_the_author() ) ),
+					esc_html( get_the_author() ),
+					$author_microdata,
+					$itemprop_url,
+					$itemprop_name
+				),
+				$settings
+			);
 		}
 
 		// Show the date
 		if ( $settings[ 'include_date' ] && $location == $settings[ 'date_location' ] ) {
-			$time_string = '<time class="wp-show-posts-entry-date published" datetime="%1$s" itemprop="datePublished">%2$s</time>';
+			$itemprop_published = ' itemprop="datePublished"';
+			$itemprop_modified = ' itemprop="dateModified"';
 
-			if ( get_the_time( 'U' ) !== get_the_modified_time( 'U' ) ) {
-				$time_string .= '<time class="wp-show-posts-updated" datetime="%3$s" itemprop="dateModified">%4$s</time>';
+			if ( ! $settings['microdata'] ) {
+				$itemprop_published = '';
+				$itemprop_modified = '';
 			}
 
-			$time_string = sprintf( $time_string,
+			$time_string = '<time class="wp-show-posts-entry-date published" datetime="%1$s"%5$s>%2$s</time>';
+
+			$updated_time = get_the_modified_time( 'U' );
+			$published_time = get_the_time( 'U' ) + 1800;
+
+			if ( $updated_time > $published_time ) {
+				if ( apply_filters( 'wpsp_post_date_show_updated_only', false, $settings ) ) {
+					$time_string = '<time class="wp-show-posts-updated" datetime="%3$s"%6$s>%4$s</time>';
+				} else {
+					$time_string = '<time class="wp-show-posts-updated" datetime="%3$s"%6$s>%4$s</time>' . $time_string;
+				}
+			}
+
+			$time_string = sprintf(
+				$time_string,
 				esc_attr( get_the_date( 'c' ) ),
 				esc_html( get_the_date() ),
 				esc_attr( get_the_modified_date( 'c' ) ),
-				esc_html( get_the_modified_date() )
+				esc_html( get_the_modified_date() ),
+				$itemprop_published,
+				$itemprop_modified
 			);
 
-			// If our date is enabled, show it
-			$output[] = apply_filters( 'wpsp_date_output', sprintf(
-				'<span class="wp-show-posts-posted-on wp-show-posts-meta">
-					<a href="%1$s" title="%2$s" rel="bookmark">%3$s</a>
-				</span>',
-				esc_url( get_permalink() ),
-				esc_attr( get_the_time() ),
+			// If our date is enabled, show it.
+			$output[] = apply_filters(
+				'wpsp_date_output',
+				sprintf(
+					'<span class="wp-show-posts-posted-on wp-show-posts-meta">
+						<a href="%1$s" title="%2$s" rel="bookmark">%3$s</a>
+					</span>',
+					esc_url( get_permalink() ),
+					esc_attr( get_the_time() ),
+					$time_string
+				),
+				$settings,
 				$time_string
-			) );
+			);
 		}
 
-		// Show the terms
-		if ( $settings[ 'include_terms' ] && $location == $settings[ 'terms_location' ] ) {
-			$output[] = apply_filters( 'wpsp_terms_output', sprintf( '<span class="wp-show-posts-terms wp-show-posts-meta">%1$s</span>',
-				get_the_term_list( get_the_ID(), $settings[ 'taxonomy' ], '', apply_filters( 'wpsp_term_separator', ', ' ) )
-			) );
+		// Show the terms.
+		if ( $settings['include_terms'] && $location === $settings['terms_location'] ) {
+			$output[] = apply_filters(
+				'wpsp_terms_output',
+				sprintf(
+					'<span class="wp-show-posts-terms wp-show-posts-meta">%1$s</span>',
+					get_the_term_list( get_the_ID(), $settings[ 'taxonomy' ], '', apply_filters( 'wpsp_term_separator', ', ', $settings ) )
+				),
+				$settings
+			);
 		}
 
-		if ( ! is_single() && ! post_password_required() && ( comments_open() || get_comments_number() ) && ( $settings[ 'include_comments' ] && $location == $settings[ 'comments_location' ] ) ) {
+		if ( ! is_single() && ! post_password_required() && ( comments_open() || get_comments_number() ) && ( $settings['include_comments'] && $location === $settings['comments_location'] ) ) {
 				ob_start();
 				echo '<span class="wp-show-posts-comments-link wp-show-posts-meta">';
+					do_action( 'wpsp_before_comments_link', $settings );
 					comments_popup_link( __( 'Leave a comment', 'wp-show-posts' ), __( '1 Comment', 'wp-show-posts' ), __( '% Comments', 'wp-show-posts' ) );
 				echo '</span>';
 				$comments_link = ob_get_clean();
 				$output[] = $comments_link;
 		}
 
-		// Set up our separator
-		$separator = ( 'inline' == $post_meta_style ) ? ' <span class="wp-show-posts-separator">|</span> ' : '<br />';
+		// Set up our separator.
+		$separator = ( 'inline' === $post_meta_style ) ? ' <span class="wp-show-posts-separator">|</span> ' : '<br />';
 
-		// Echo our output
+		// Echo our output.
 		echo implode( $separator, $output);
 
-		if ( ( $settings[ 'include_author' ] && $location == $settings[ 'author_location' ] ) || ( $settings[ 'include_date' ] && $location == $settings[ 'date_location' ] ) || ( $settings[ 'include_terms' ] && $location == $settings[ 'terms_location' ] ) || ( $settings[ 'include_comments' ] && $location == $settings[ 'comments_location' ] ) ) {
+		if ( ( $settings['include_author'] && $location === $settings['author_location'] ) || ( $settings['include_date'] && $location === $settings['date_location'] ) || ( $settings['include_terms'] && $location === $settings['terms_location'] ) || ( $settings['include_comments'] && $location === $settings['comments_location'] ) ) {
 			echo '</div>';
 		}
 	}
@@ -187,14 +233,28 @@ if ( ! function_exists( 'wpsp_post_image' ) ) {
 				);
 			}
 
-				if ( ! empty( $image_atts ) ) : ?>
-					<img src="<?php echo WPSP_Resize( $image_url[0], $image_atts[ 'width' ], $image_atts[ 'height' ], $image_atts[ 'crop' ], true, $image_atts[ 'upscale' ] ); ?>" alt="<?php esc_attr( the_title() ); ?>" itemprop="image" class="<?php echo $settings[ 'image_alignment' ]; ?>" />
+
+
+				if ( ! empty( $image_atts ) ) :
+					$image_itemprop = 'itemprop="image"';
+
+					if ( ! $settings['microdata'] ) {
+						$image_itemprop = '';
+					}
+					?>
+					<img src="<?php echo WPSP_Resize( $image_url[0], $image_atts[ 'width' ], $image_atts[ 'height' ], $image_atts[ 'crop' ], true, $image_atts[ 'upscale' ] ); ?>" alt="<?php esc_attr( the_title() ); ?>" <?php echo $image_itemprop; ?> class="<?php echo $settings[ 'image_alignment' ]; ?>" />
 				<?php else :
-					the_post_thumbnail( apply_filters( 'wpsp_default_image_size', 'full' ), array( 'itemprop' => 'image' ) );
+					$image_itemprop = array( 'itemprop' => 'image' );
+
+					if ( ! $settings['microdata'] ) {
+						$image_itemprop = array();
+					}
+
+					the_post_thumbnail( apply_filters( 'wpsp_default_image_size', $settings['image_attachment_size'], $settings ), $image_itemprop );
 				endif;
 
 				if ( isset( $settings[ 'image_overlay_color' ] ) && ( '' !== $settings[ 'image_overlay_color' ] || '' !== $settings[ 'image_overlay_icon' ] ) ) {
-					$color = ( $settings[ 'image_overlay_color' ] ) ? 'style="background-color:' . wpsp_hex2rgba( $settings[ 'image_overlay_color' ], apply_filters( 'wpsp_overlay_opacity', 0.7 ) ) . '"' : '';
+					$color = ( $settings[ 'image_overlay_color' ] ) ? 'style="background-color:' . wpsp_hex2rgba( $settings[ 'image_overlay_color' ], apply_filters( 'wpsp_overlay_opacity', 0.7, $settings ) ) . '"' : '';
 					$icon = ( $settings[ 'image_overlay_icon' ] ) ? $settings[ 'image_overlay_icon' ] : 'no-icon';
 					echo '<span class="wp-show-posts-image-overlay ' . $icon . '" ' . $color . '></span>';
 				}
@@ -232,13 +292,18 @@ if ( ! function_exists( 'wpsp_read_more' ) ) {
 	add_action( 'wpsp_after_content','wpsp_read_more', 5 );
 
 	function wpsp_read_more( $settings ) {
-		if ( $settings[ 'read_more_text' ] ) {
-			echo apply_filters( 'wpsp_read_more_output', sprintf('<div class="wpsp-read-more"><a title="%1$s" class="%4$s" href="%2$s">%3$s</a></div>',
-				the_title_attribute( 'echo=0' ),
-				esc_url( get_permalink() ),
-				$settings[ 'read_more_text' ],
-				esc_attr( $settings['read_more_class'] )
-			));
+		if ( $settings['read_more_text'] ) {
+			echo apply_filters(
+				'wpsp_read_more_output',
+				sprintf(
+					'<div class="wpsp-read-more"><a title="%1$s" class="%4$s" href="%2$s">%3$s</a></div>',
+					the_title_attribute( 'echo=0' ),
+					esc_url( get_permalink() ),
+					$settings['read_more_text'],
+					esc_attr( $settings['read_more_class'] )
+				),
+				$settings
+			);
 		}
 	}
 }

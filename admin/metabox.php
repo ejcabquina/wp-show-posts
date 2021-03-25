@@ -239,6 +239,7 @@ if ( ! function_exists( 'wpsp_register' ) ) {
 	            'type'    => 'text',
 	            'section' => 'wpsp_columns',
 	            'label'   => esc_html__( 'Columns gutter', 'wp-show-posts' ),
+				'description' => esc_html__( 'Add the unit: px, em etc..', 'wp-show-posts' ),
 				'attr'    => array( 'class' => 'widefat' ),
 	        )
 	    );
@@ -276,6 +277,35 @@ if ( ! function_exists( 'wpsp_register' ) ) {
 				'default' => $defaults[ 'wpsp_image' ]
 			)
 		);
+
+		$image_sizes = get_intermediate_image_sizes();
+		$image_sizes[] = 'full';
+		$image_sizes = array_diff( $image_sizes, array( '1536x1536', '2048x2048' ) );
+
+		$manager->register_control(
+			'wpsp_image_attachment_size', // Same as setting name.
+			array(
+				'type'    => 'text',
+				'section' => 'wpsp_images',
+				'label'   => esc_html__( 'Image size', 'wp-show-posts' ),
+				'description' => sprintf(
+					__( 'Available image sizes: %s', 'wp-show-posts' ),
+					implode( ', ', $image_sizes )
+				),
+				'attr' => array(
+					'id' => 'wpsp-image-size',
+					'placeholder' => 'full',
+				),
+			)
+		);
+
+		$manager->register_setting(
+	        'wpsp_image_attachment_size', // Same as control name.
+	        array(
+	            'sanitize_callback' => 'sanitize_text_field',
+				'default' => $defaults[ 'wpsp_image_attachment_size' ]
+	        )
+	    );
 
 		$manager->register_control(
 	        'wpsp_image_width', // Same as setting name.
@@ -926,7 +956,25 @@ if ( ! function_exists( 'wpsp_register' ) ) {
 	            'sanitize_callback' => 'wp_kses_post',
 				'default' => $defaults[ 'wpsp_no_results' ] ? $defaults[ 'wpsp_no_results' ] : ''
 	        )
-	    );
+		);
+
+		$manager->register_control(
+			'wpsp_microdata',
+			array(
+				'type'        => 'checkbox',
+				'section'     => 'wpsp_query_args',
+				'label'       => __( 'Add basic microdata', 'wp-show-posts' ),
+				'attr' => array( 'id' => 'wpsp-microdata' )
+			)
+		);
+
+		$manager->register_setting(
+			'wpsp_microdata',
+			array(
+				'sanitize_callback' => 'butterbean_validate_boolean',
+				'default' => $defaults[ 'wpsp_microdata' ] ? $defaults[ 'wpsp_microdata' ] : false
+			)
+		);
 	}
 }
 
